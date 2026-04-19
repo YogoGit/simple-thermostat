@@ -7,10 +7,7 @@ export interface Setpoint {
 
 export type Setpoints = Record<string, Setpoint>
 
-export default function parseSetpoints(
-  setpoints: Setpoints | false,
-  attributes: any
-) {
+export function parseSetpoints(setpoints: Setpoints | false, attributes: any) {
   if (setpoints === false) {
     return {}
   }
@@ -19,7 +16,6 @@ export default function parseSetpoints(
     const def = Object.keys(setpoints)
     return def.reduce((result, name: string) => {
       const sp = setpoints[name]
-      if (sp?.hide) return result
       return {
         ...result,
         [name]: attributes?.[name],
@@ -36,4 +32,18 @@ export default function parseSetpoints(
   return {
     temperature: attributes.temperature,
   }
+}
+
+export function filterSetpoints(setpoints: Setpoints | false, temps: any) {
+  let def = Object.keys(temps)
+  return def.reduce((result, name: string) => {
+    if (setpoints && setpoints.hasOwnProperty(name)) {
+      const sp = setpoints[name]
+      if (sp?.hide) return result
+    }
+    return {
+      ...result,
+      [name]: true,
+    }
+  }, {})
 }

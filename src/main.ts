@@ -14,7 +14,7 @@ import renderSensors from './components/sensors'
 import renderModeType from './components/modeType'
 
 import parseHeader, { HeaderData, MODE_ICONS } from './config/header'
-import parseSetpoints from './config/setpoints'
+import { parseSetpoints, filterSetpoints } from './config/setpoints'
 import parseService, { Service } from './config/service'
 
 import { CardConfig, ModeValue, ModeControlObject, MODES } from './config/card'
@@ -127,6 +127,10 @@ export default class SimpleThermostat extends LitElement {
     type: Object,
   })
   _values: Values = {}
+  @property({
+    type: Object,
+  })
+  _shownValues: Values = {}
   @property()
   _updatingValues: boolean = false
   @property()
@@ -206,6 +210,9 @@ export default class SimpleThermostat extends LitElement {
     } else if (!this._updatingValues) {
       this._values = values
     }
+
+    // Determine which setpoint values are shown on the screen
+    this._shownValues = filterSetpoints(this.config?.setpoints ?? null, values)
 
     const supportedModeType = (type: string) =>
       MODE_TYPES.includes(type) && attributes[`${type}_modes`]
@@ -347,7 +354,9 @@ export default class SimpleThermostat extends LitElement {
     return translations?.[key] ?? label
   }
 
-  render({ _hide, _values, _updatingValues, config, entity } = this) {
+  render(
+    { _hide, _values, _updatingValues, _shownValues, config, entity } = this
+  ) {
     const warnings = []
     if (this.stepSize < 1 && this.config.decimals === 0) {
       warnings.push(html`
@@ -420,7 +429,8 @@ export default class SimpleThermostat extends LitElement {
         })}
         <section class="body">
           ${sensorsHtml}
-          ${Object.entries(_values).map(([field, value]) => {
+          ${Object.entries(_shownValues).map(([field, flag]) => {
+            const value = _values[field]
             const hasValue = ['string', 'number'].includes(typeof value)
             const showUnit = unit !== false && hasValue
             return html`
